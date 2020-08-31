@@ -209,7 +209,11 @@ static void * remote_gpio_thread(void * arg)
         //Updates pins from shared memory
         if(s->is_shared)
         sifive_gpio_update_from_sharedm(s);
+    #ifdef _WIN32
+        Sleep(10);
+    #else 
         usleep(10000);
+    #endif /* !_WIN32 */
     }
 
     return 0; 
@@ -456,7 +460,12 @@ static Property sifive_gpio_properties[] = {
 static void sifive_gpio_realize(DeviceState *dev, Error **errp)
 {
     SIFIVEGPIOState *s = SIFIVE_GPIO(dev);
+    
+#ifdef _WIN32
+    TCHAR buf[BUFSIZE];
+#else
     char buf[BUFSIZE];
+#endif /* !_WIN32 */
     int recvlen;
 
     s->is_shared=true;
@@ -478,14 +487,32 @@ static void sifive_gpio_realize(DeviceState *dev, Error **errp)
         buf[recvlen]=0;
 
         /*Opens shared memory region*/
+    #ifdef _WIN32
+        s->hMapFile = OpenFileMapping(
+                    FILE_MAP_ALL_ACCESS,   // read/write access
+                    FALSE,                 // do not inherit the name
+                    buf);
+
+        if(s->hMapFile==NULL) {    
+    #else
         s->fd = shm_open(buf,  O_RDWR, S_IRUSR | S_IWUSR);
         
-        if(s->fd==0) {
+        if(s->fd == 0) {
+    #endif /* !_WIN32 */
+        
             s->is_shared=false;
         }
         else {
             /* Maps shared memory object */
+        #ifdef _WIN32
+            s->rptr = (uint32_t*) MapViewOfFile(s->hMapFile,   // handle to map object
+                        FILE_MAP_ALL_ACCESS, // read/write permission
+                        0,
+                        0,
+                        sizeof(short));
+        #else
             s->rptr = (uint64_t *) mmap(NULL, sizeof(uint32_t),   PROT_READ | PROT_WRITE, MAP_SHARED, s->fd, 0);
+        #endif /* !_WIN32 */
 
             if(s->rptr == NULL) {
                 s->is_shared=false;
