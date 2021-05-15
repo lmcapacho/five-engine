@@ -6,9 +6,10 @@ git:
   submodules: false
 
 install:
-  - pip install -r engine/src/requirements.txt
+  - sudo apt update
   - sudo apt install gdb-multiarch
-
+  - pip install -r engine/src/requirements.txt
+  
 script:
   - pytest
   
