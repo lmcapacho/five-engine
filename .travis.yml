@@ -2,6 +2,9 @@ language: python
 os:   linux
 dist: bionic
 
+git:
+  submodules: false
+
 install:
   - pip install -r engine/src/requirements.txt
 
