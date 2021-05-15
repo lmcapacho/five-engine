@@ -7,6 +7,7 @@ git:
 
 install:
   - pip install -r engine/src/requirements.txt
+  - sudo apt install gdb-multiarch
 
 script:
   - pytest
