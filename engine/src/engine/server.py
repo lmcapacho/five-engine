@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import socket
+from common import Cmd
 
 
 class Server:
@@ -16,7 +17,7 @@ class Server:
             cmd = conn.recv(4, socket.MSG_WAITALL)
             self.command = int.from_bytes(cmd, 'little')
 
-            if self.command == 255:
+            if self.command == Cmd.EXIT:
                 conn.sendall(int(0).to_bytes(4, 'little'))
                 self.sock.close()
                 execute = False
