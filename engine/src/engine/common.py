@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from enum import Enum
+from enum import IntEnum
 
 
-class Cmd(Enum):
+class Cmd(IntEnum):
     """ Commands """
     LOAD = 0
     RUN = 1
@@ -19,7 +19,7 @@ class Cmd(Enum):
     EXIT = 255
 
 
-class State(Enum):
+class State(IntEnum):
     """ States """
     IDLE = 0
     LOAD = 1
