@@ -1,3 +1,10 @@
 language: python
 os:   linux
 dist: bionic
+
+install:
+  - pip install -r engine/src/requirements.txt
+
+script:
+  - pytest
+  
