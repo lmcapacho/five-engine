@@ -7,6 +7,7 @@ import threading
 import pytest
 
 from engine import engine
+from engine.common import Cmd
 
 
 def run_engine():
@@ -26,7 +27,7 @@ def test_connection():
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
-        s.sendall(int(255).to_bytes(4, 'little'))
+        s.sendall(Cmd.EXIT.to_bytes(4, 'little'))
         data = s.recv(4, socket.MSG_WAITALL)
 
     assert int.from_bytes(data, 'little') == 0
