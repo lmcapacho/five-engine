@@ -6,17 +6,22 @@ import threading
 
 import pytest
 
-from engine import engine
+from engine.server import Server
 from engine.common import Cmd
 
 
-def run_engine():
-    engine.app(4321)
+def run_server():
+    engine_server = Server(4321)
+    engine_server.config()
+
+    execute = True
+    while execute:
+        execute, cmd = engine_server.wait_command()
 
 
 @pytest.fixture(autouse=True)
 def thread_engine():
-    process = threading.Thread(target=run_engine)
+    process = threading.Thread(target=run_server)
     process.start()
 
 
