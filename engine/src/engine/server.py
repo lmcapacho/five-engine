@@ -13,16 +13,26 @@ class Server:
     def wait_command(self):
         execute = True
         self.conn, addr = self.sock.accept()
-        with self.conn:
-            cmd = self.conn.recv(4, socket.MSG_WAITALL)
-            cmd = int.from_bytes(cmd, 'little')
 
-            if cmd == Cmd.EXIT:
-                self.conn.sendall(int(0).to_bytes(4, 'little'))
-                self.sock.close()
-                execute = False
+        cmd = self.conn.recv(4, socket.MSG_WAITALL)
+        cmd = int.from_bytes(cmd, 'little')
+
+        if cmd == Cmd.EXIT:
+            self.conn.sendall(int(0).to_bytes(4, 'little'))
+            self.conn.close()
+            self.sock.close()
+            execute = False
 
         return execute, cmd
+
+    def wait_data(self):
+        data = self.conn.recv(4, socket.MSG_WAITALL)
+        data = int.from_bytes(data, 'little')
+
+        return data
+
+    def close_conn(self):
+        self.conn.close()
 
     def config(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
