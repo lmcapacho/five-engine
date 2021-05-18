@@ -7,7 +7,7 @@ from pygdbmi.gdbcontroller import GdbController
 
 class Debugger:
     def __init__(self, arch='riscv:rv32'):
-        logging.basicConfig(level=logging.DEBUG)
+        # logging.basicConfig(level=logging.DEBUG)
         self.gdbmi = None
         try:
             command = ['gdb-multiarch', '--interpreter=mi3', '--quiet']
@@ -25,6 +25,20 @@ class Debugger:
     def connect(self):
         if self.gdbmi is not None:
             self.gdbmi.write('target remote :1234')
+
+    def readMemory(self, dir, size):
+        gdb_cmd = f'x/{size} {dir}'
+        response = self.gdbmi.write(gdb_cmd)
+
+        for res in response:
+            if res['type'] == 'result':
+                msg = res['message']
+                if res['payload'] is not None:
+                    payload = res['payload']['msg'].encode()
+                else:
+                    payload = None
+
+        return msg, payload
 
     def close(self):
         if self.gdbmi is not None:
