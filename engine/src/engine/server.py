@@ -31,6 +31,16 @@ class Server:
 
         return data
 
+    def send_data(self, data):
+        if isinstance(data, int):
+            data = data.to_bytes(4, 'little')
+        elif isinstance(data, str):
+            data = data.decode()
+        else:
+            data = b''
+
+        self.conn.sendall(data)
+
     def close_conn(self):
         self.conn.close()
 
