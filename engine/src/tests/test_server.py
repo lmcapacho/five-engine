@@ -31,6 +31,7 @@ def test_connection():
     data = b''
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.connect((HOST, PORT))
         s.sendall(Cmd.EXIT.to_bytes(4, 'little'))
         data = s.recv(4, socket.MSG_WAITALL)
