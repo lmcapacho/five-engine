@@ -59,6 +59,7 @@ class Engine:
             if msg == 'error':
                 self.server.send_data(2)
             else:
+                self.server.send_data(0)
                 self.server.send_data(mem)
         elif cmd == Cmd.GPIO_W:
             pass
