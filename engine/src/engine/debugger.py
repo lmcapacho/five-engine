@@ -26,6 +26,15 @@ class Debugger:
         if self.gdbmi is not None:
             self.gdbmi.write('target remote :1234')
 
+    def suspend(self):
+        self.gdbmi.send_signal_to_gdb('SIGINT')
+
+    def loadCode(self, filename):
+        gdb_cmd = f'add-symbol-file {filename}'
+        response = self.gdbmi.write(gdb_cmd)
+        gdb_cmd = f'load {filename}'
+        response = self.gdbmi.write(gdb_cmd)
+
     def readMemory(self, dir, size):
         gdb_cmd = f'x/{size} {dir}'
         response = self.gdbmi.write(gdb_cmd)
