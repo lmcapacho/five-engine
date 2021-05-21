@@ -25,8 +25,8 @@ class Server:
 
         return execute, cmd
 
-    def wait_data(self):
-        data = self.conn.recv(4, socket.MSG_WAITALL)
+    def wait_data(self, size=4):
+        data = self.conn.recv(size, socket.MSG_WAITALL)
         data = int.from_bytes(data, 'little')
 
         return data
