@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import socket
-from .common import Cmd
 
 
 class Server:
@@ -10,36 +9,35 @@ class Server:
         self.port = port
         self.host = '127.0.0.1'
 
-    def wait_command(self):
-        execute = True
-        self.conn, addr = self.sock.accept()
+    def open_conn(self):
+        self.conn, _ = self.sock.accept()
 
-        cmd = self.conn.recv(4, socket.MSG_WAITALL)
-        cmd = int.from_bytes(cmd, 'little')
-
-        if cmd == Cmd.EXIT:
-            self.conn.sendall(int(0).to_bytes(4, 'little'))
-            self.conn.close()
-            self.sock.close()
-            execute = False
-
-        return execute, cmd
-
-    def wait_data(self, size=4):
+    def read_data(self, type=int, size=4):
         data = self.conn.recv(size, socket.MSG_WAITALL)
-        data = int.from_bytes(data, 'little')
+        if type == int:
+            data = int.from_bytes(data, 'little')
+        elif type == str:
+            data = data.decode()
 
         return data
 
     def send_data(self, data):
         if isinstance(data, int):
-            data = data.to_bytes(4, 'little')
+            value = data.to_bytes(4, 'little')
         elif isinstance(data, str):
-            data = data.decode()
+            value = data.encode()
+        elif isinstance(data, list):
+            value = b''
+            for d in data:
+                value += d.to_bytes(4, 'little')
         else:
-            data = b''
+            value = b''
 
-        self.conn.sendall(data)
+        self.conn.sendall(value)
+
+    def close(self):
+        self.conn.close()
+        self.sock.close()
 
     def close_conn(self):
         self.conn.close()
