@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from multiprocessing import shared_memory
+import sys
+
+if sys.version_info[0] == 3 and sys.version_info[1] >= 8:
+    from multiprocessing import shared_memory
+else:
+    import shared_memory
 
 from engine.server import Server
 
