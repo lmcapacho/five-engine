@@ -1,2 +1,2 @@
-pygdbmi==0.10.0.0
+pygdbmi==0.10.0.1
 shared-memory38; python_version < "3.8"
