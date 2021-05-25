@@ -1,4 +1,4 @@
-FiveEmu: RISC-V Emulator
-========================
-.. image:: https://travis-ci.com/lmcapacho/FiveEmu.svg?branch=master
-    :target: https://travis-ci.com/lmcapacho/FiveEmu 
+RISC-V Engine Emulator
+======================
+.. image:: https://travis-ci.com/lmcapacho/five-engine.svg?branch=master
+    :target: https://travis-ci.com/lmcapacho/five-engine
