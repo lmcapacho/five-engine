@@ -15,7 +15,7 @@
 #include "qemu/log.h"
 #include "hw/irq.h"
 #include "hw/qdev-properties.h"
-#include "hw/riscv/sifive_gpio.h"
+#include "hw/gpio/sifive_gpio.h"
 #include "migration/vmstate.h"
 #include "trace.h"
 
@@ -74,7 +74,6 @@ static int recvSharedMemoryID(char *ID){
 
 static void update_output_irq(SIFIVEGPIOState *s)
 {
-
     uint32_t pending;
     uint32_t pin;
 
@@ -90,14 +89,11 @@ static void update_output_irq(SIFIVEGPIOState *s)
     }
 }
 
-
-
 static void update_state(SIFIVEGPIOState *s)
 {
     size_t i;
     bool prev_ival, in, in_mask, port, out_xor, pull, output_en, input_en,
         rise_ip, fall_ip, low_ip, high_ip, oval, actual_value, ival;
-
 
     for (i = 0; i < s->ngpio; i++) {
 
@@ -139,7 +135,6 @@ static void update_state(SIFIVEGPIOState *s)
         } else {
             /* Floating? Apply pull-up resistor */
             actual_value = pull;
-
         }
 
         if (output_en) {
@@ -166,58 +161,6 @@ static void update_state(SIFIVEGPIOState *s)
         s->value = deposit32(s->value, i, 1, ival);
     }
     update_output_irq(s);
-}
-
-static void sifive_gpio_set(void *opaque, int line, int value)
-{
-    SIFIVEGPIOState *s = SIFIVE_GPIO(opaque);
-
-    trace_sifive_gpio_set(line, value);
-
-    assert(line >= 0 && line < s->ngpio);
-
-    s->in_mask = deposit32(s->in_mask, line, 1, value >= 0);
-    if (value >= 0) {
-        s->in = deposit32(s->in, line, 1, value != 0);
-    }
-
-    update_state(s);
-}
-
-//To update GPIO pins from shared memory
-static void sifive_gpio_update_from_sharedm(SIFIVEGPIOState *s)
-{
-    uint32_t shm_pin,i;
-
-    /*Shares value to external process*/
-    qemu_mutex_lock(&s->dat_lock);
-    shm_pin = s->rptr[0];
-    qemu_mutex_unlock(&s->dat_lock);
-
-    //Only takes into account input pins
-    for (i = 0; i < s->ngpio; i++) {
-        if(extract32(s->input_en, i, 1))
-        sifive_gpio_set(s, i, extract32(shm_pin, i, 1));
-    }
-}
-
-static void * remote_gpio_thread(void * arg)
-{
-    SIFIVEGPIOState *s = SIFIVE_GPIO(arg);
-
-    while(true) {
-        //Updates pins from shared memory
-        if(s->is_shared)
-        sifive_gpio_update_from_sharedm(s);
-    #ifdef _WIN32
-        Sleep(10);
-    #else 
-        usleep(10000);
-    #endif /* !_WIN32 */
-    }
-
-    return 0; 
-
 }
 
 static uint64_t sifive_gpio_read(void *opaque, hwaddr offset, unsigned int size)
@@ -305,7 +248,7 @@ static uint64_t sifive_gpio_read(void *opaque, hwaddr offset, unsigned int size)
     return r;
 }
 
-static void sifive_gpio_write(void *opaque, hwaddr offset, 
+static void sifive_gpio_write(void *opaque, hwaddr offset,
                               uint64_t value, unsigned int size)
 {
     SIFIVEGPIOState *s = SIFIVE_GPIO(opaque);
@@ -399,6 +342,22 @@ static const MemoryRegionOps gpio_ops = {
     .impl.max_access_size = 4,
 };
 
+static void sifive_gpio_set(void *opaque, int line, int value)
+{
+    SIFIVEGPIOState *s = SIFIVE_GPIO(opaque);
+
+    trace_sifive_gpio_set(line, value);
+
+    assert(line >= 0 && line < SIFIVE_GPIO_PINS);
+
+    s->in_mask = deposit32(s->in_mask, line, 1, value >= 0);
+    if (value >= 0) {
+        s->in = deposit32(s->in, line, 1, value != 0);
+    }
+
+    update_state(s);
+}
+
 static void sifive_gpio_reset(DeviceState *dev)
 {
     SIFIVEGPIOState *s = SIFIVE_GPIO(dev);
@@ -422,7 +381,6 @@ static void sifive_gpio_reset(DeviceState *dev)
     s->out_xor = 0;
     s->in = 0;
     s->in_mask = 0;
-
 }
 
 static const VMStateDescription vmstate_sifive_gpio = {
@@ -457,10 +415,46 @@ static Property sifive_gpio_properties[] = {
     DEFINE_PROP_END_OF_LIST(),
 };
 
+//To update GPIO pins from shared memory
+static void sifive_gpio_update_from_sharedm(SIFIVEGPIOState *s)
+{
+    uint32_t shm_pin,i;
+
+    /*Shares value to external process*/
+    qemu_mutex_lock(&s->dat_lock);
+    shm_pin = s->rptr[0];
+    qemu_mutex_unlock(&s->dat_lock);
+
+    //Only takes into account input pins
+    for (i = 0; i < s->ngpio; i++) {
+        if(extract32(s->input_en, i, 1))
+        sifive_gpio_set(s, i, extract32(shm_pin, i, 1));
+    }
+}
+
+static void * remote_gpio_thread(void * arg)
+{
+    SIFIVEGPIOState *s = SIFIVE_GPIO(arg);
+
+    while(true) {
+        //Updates pins from shared memory
+        if(s->is_shared)
+        sifive_gpio_update_from_sharedm(s);
+    #ifdef _WIN32
+        Sleep(10);
+    #else 
+        usleep(10000);
+    #endif /* !_WIN32 */
+    }
+
+    return 0; 
+
+}
+
 static void sifive_gpio_realize(DeviceState *dev, Error **errp)
 {
     SIFIVEGPIOState *s = SIFIVE_GPIO(dev);
-    
+
 #ifdef _WIN32
     TCHAR buf[BUFSIZE];
 #else
@@ -472,8 +466,8 @@ static void sifive_gpio_realize(DeviceState *dev, Error **errp)
 
     memory_region_init_io(&s->mmio, OBJECT(dev), &gpio_ops, s,
             TYPE_SIFIVE_GPIO, SIFIVE_GPIO_SIZE);
-    sysbus_init_mmio(SYS_BUS_DEVICE(dev), &s->mmio);
 
+    sysbus_init_mmio(SYS_BUS_DEVICE(dev), &s->mmio);
 
     for (int i = 0; i < s->ngpio; i++) {
         sysbus_init_irq(SYS_BUS_DEVICE(dev), &s->irq[i]);
@@ -481,7 +475,7 @@ static void sifive_gpio_realize(DeviceState *dev, Error **errp)
 
     qdev_init_gpio_in(DEVICE(s), sifive_gpio_set, s->ngpio);
     qdev_init_gpio_out(DEVICE(s), s->output, s->ngpio);
-
+    
     recvlen=recvSharedMemoryID(buf);
     if(recvlen>0) {
         buf[recvlen]=0;
