@@ -7,17 +7,8 @@ git:
 
 install:
   - sudo apt update
-  - sudo apt install gdb-multiarch ninja-build
-  - pip install -r engine/src/requirements.txt
-  
+  - sudo apt install gdb-multiarch binutils-riscv64-unknown-elf
+  - pip install -r requirements.txt
+
 script:
-  - cd engine
-  - git submodule update --init
-  - ./scripts/patch.sh
-  - cd qemu 
-  - ./configure --target-list=riscv64-softmmu,riscv32-softmmu --extra-flags=-lrt
-  - make -j
-  - sudo make install
-  - cd ../src
   - pytest
-  
