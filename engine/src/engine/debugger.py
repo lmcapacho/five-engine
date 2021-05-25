@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+
 import logging
 from pygdbmi.gdbcontroller import GdbController
 
@@ -27,16 +29,29 @@ class Debugger:
             self.gdbmi.write('target remote :1234')
 
     def suspend(self):
-        self.gdbmi.send_signal_to_gdb('SIGINT')
+        # self.gdbmi.send_signal_to_gdb('SIGINT')
+        os.kill(self.gdbmi.gdb_process.pid, 2)
+        self.gdbmi.get_gdb_response()
 
     def run(self):
         response = self.gdbmi.write('c')
         return response
 
     def step(self):
-        self.gdbmi.write('s')
+        response = self.gdbmi.write('s')
+        for res in response:
+            if res['type'] == 'result':
+                if res['message'] == 'running':
+                    self.suspend()
+
         status = self.getStatus()
         return status
+
+    def breakpoint(self, number):
+        gdb_cmd = f'b {number}'
+        response = self.gdbmi.write(gdb_cmd)
+
+        return response
 
     def loadCode(self, filename):
         gdb_cmd = f'add-symbol-file {filename}'
@@ -61,14 +76,13 @@ class Debugger:
 
     def getStatus(self):
         response = self.gdbmi.write('frame')
+        line = 0
         for res in response:
             if res['type'] == 'console':
-                if res['payload'] in ':':
+                if ':' in res['payload']:
                     line = res['payload'].split(':')[1]
                     line = line.split('\\')[0]
                     line = int(line)
-                else:
-                    line = 0
 
         response = self.gdbmi.write('info registers')
         regs = []
