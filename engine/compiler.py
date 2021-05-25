@@ -6,19 +6,19 @@ import os
 
 
 class Compiler:
-    def __init__(self, temp_dir):
+    def __init__(self, dir):
         dirname = os.path.dirname(os.path.dirname(
             os.path.dirname(os.path.abspath(__file__)))) + '/resources/'
         self.as_command = [
-            dirname+'riscv64-unknown-elf-as', '-g', '-march',
-            'rv32imac', '-o', temp_dir+'/code.o',
-            temp_dir + '/code.s', '-statistics'
+            'riscv64-unknown-elf-as', '-g', '-march',
+            'rv32imac', '-o', dir+'/code.o',
+            dir + '/code.s', '-statistics'
         ]
 
         self.ld_command = [
-            dirname+'riscv64-unknown-elf-ld', '-g', '-m',
+            'riscv64-unknown-elf-ld', '-g', '-m',
             'elf32lriscv', '-T', dirname+'link.lds', '-o',
-            temp_dir+'/code', temp_dir+'/code.o',
+            dir+'/code', dir+'/code.o',
             '-print-memory-usage'
         ]
 
