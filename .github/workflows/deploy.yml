@@ -1,0 +1,32 @@
+name: CI/CD
+on: [push, pull_request]
+
+jobs:
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.6, 3.7, 3.8, 3.9]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: lmcapacho/five-engine
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install gdb-multiarch binutils-riscv64-unknown-elf
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Install five-qemu
+        run: |
+          wget https://github.com/lmcapacho/five-qemu/releases/download/nightly/five-qemu-ubuntu-20.04.tar.gz
+          sudo tar -zxvf five-qemu-ubuntu-20.04.tar.gz -C /usr/local/bin
+      - name: Test
+        run: pytest
