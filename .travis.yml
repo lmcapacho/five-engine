@@ -16,4 +16,6 @@ install:
   - pip install -r requirements.txt
 
 script:
+  - wget https://github.com/lmcapacho/five-qemu/releases/download/nightly/five-qemu-ubuntu-20.04.tar.gz
+  - sudo tar -zxvf five-qemu-ubuntu-20.04.tar.gz -C /usr/local/bin
   - pytest
